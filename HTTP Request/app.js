@@ -1,31 +1,28 @@
+const checkStatusAndParse = (response) => {
+    if (!response.ok)
+        throw new Error(`Status Code Error: ${response.status}`);
 
-fetch("https://swapi.co/api/planets/")
-    .then((response) => {
-        if (!response.ok)
-            throw new Error(`Status Code Error: ${response.status}`);
+    return response.json();
+}
 
-        return response.json();
-    })
-    .then((data) => { //llamo al metodo json para acceder a data
-        console.log("Fetched all planets (first 10)");
-        for (let planet of data.results) {
-            console.log(planet.name);
-        }
-        const nextURL = data.next; //La API tiene una propiedad llamada next que permite acceder a la siguiente pagina de data
-        return fetch(nextURL) //Promise, la cual puedo return
-    })
-    .then((response) => {
-        if (!response.ok) // chequea si esta todo correcto para fetch
-            throw new Error(`Status Code Error: ${response.status}`);
+const printPlanets = (data) => {
+    console.log("Loaded 10 more planets...");
+    for (let planet of data.results) {
+        console.log(planet.name);
+    }
+    return Promise.resolve(data.next) // crea una nueva Promise que return para que pueda refactorizar de esta forma
+};
 
-        return response.json(); //si lo esta, aplica el metodo json(convertir)
-    })
-    .then((data) => {
-        console.log("Fetched Next 10 Planets");
-        for (let planet of data.results) {
-            console.log(planet.name);
-        };
-    })
+const fetchNextPlanets = (url = "https://swapi.co/api/planets/") => {
+    return fetch(url);
+}
+
+fetchNextPlanets()
+    .then(checkStatusAndParse) //Esta forma solo se puede hacer cuando la promise "returns"
+    .then(printPlanets)
+    .then(fetchNextPlanets)
+    .then(checkStatusAndParse)
+    .then(printPlanets)
     .catch((err) => {
         console.log("Something went wrong with fetch");
         console.log(err);
